@@ -3,6 +3,10 @@
 #include <stdbool.h>  // bool
 #include <stdio.h>    // printf
 
+#define ALIGNMENT 16 // Must be power of 2
+#define GET_PAD(x) ((ALIGNMENT - 1) - (((x)-1) & (ALIGNMENT - 1)))
+#define PADDED_SIZE(x) ((x) + GET_PAD(x))
+
 struct block
 {
     struct block *next;
@@ -10,34 +14,47 @@ struct block
     int in_use; // boolean
 };
 
+struct block *head = NULL;
+
 /**
  *  Allocate a given number of bytes & return a pointer to it.
  */
 void *myalloc(int size)
 {
-    void *heap;
-    bool is_first_call = 0;
-
-    if (is_first_call)
+    if (head == NULL)
     {
         // mmap space
-        heap = mmap(
+        head = mmap(
             NULL, 1024, PROT_READ | PROT_WRITE, MAP_ANON | MAP_PRIVATE, -1, 0);
 
         // build a linked list node inside new space, indicating size and "in use" status
+        head->next = NULL;
+        head->size = 1024 - PADDED_SIZE(sizeof(struct block));
+        head->in_use = 0;
     }
 
-    // traverse (loop over) linked list
-    // find first node not "in use"
-    // &&
-    // big enough to hold given size + padding
+    // traverse linked list
+    struct block *node = head;
 
-    // if found
-    // mark "in use"
-    // return pointer to user data after linked list node (+ padding)
+    while (node != NULL)
+    {
+        node = node->next;
 
-    // else return NULL
-    return ((void *)0);
+        if (node->in_use || node->size < size)
+        {
+            continue;
+        }
+
+        // find "first fit":
+        // a node that's not "in use" && big enough to hold padded size
+        // then
+        // mark "in use" &&
+        // return pointer to user data after linked list node (+ padding)
+        node->in_use = 1;
+        return node + sizeof node;
+    }
+
+    return NULL;
 }
 
 /**
@@ -76,6 +93,7 @@ void print_data(void)
 
 int main(int argc, char const *argv[])
 {
+
     // allocate space for 5 ints
     int *p = myalloc(sizeof(int) * 5);
     printf("%p\n", p);
