@@ -41,9 +41,7 @@ void *myalloc(int size)
         node = node->next;
 
         if (node->in_use || node->size < size)
-        {
             continue;
-        }
 
         // find "first fit":
         // a node that's not "in use" && big enough to hold padded size
