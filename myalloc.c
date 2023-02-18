@@ -6,6 +6,7 @@
 #define ALIGNMENT 16 // Must be power of 2
 #define GET_PAD(x) ((ALIGNMENT - 1) - (((x)-1) & (ALIGNMENT - 1)))
 #define PADDED_SIZE(x) ((x) + GET_PAD(x))
+#define PTR_OFFSET(p, offset) ((void *)((char *)(p) + (offset)))
 
 struct block
 {
@@ -15,43 +16,49 @@ struct block
 };
 
 struct block *head = NULL;
+padded_block_size = PADDED_SIZE(sizeof(struct block));
 
 /**
  *  Allocate a given number of bytes & return a pointer to it.
  */
 void *myalloc(int size)
 {
-    if (head == NULL)
+    struct block *b = head;
+
+    // initial call
+    if (b == NULL)
     {
         // mmap space
         head = mmap(
             NULL, 1024, PROT_READ | PROT_WRITE, MAP_ANON | MAP_PRIVATE, -1, 0);
 
-        // build a linked list node inside new space, indicating size and "in use" status
+        // build a linked list node inside new space
         head->next = NULL;
-        head->size = 1024 - PADDED_SIZE(sizeof(struct block));
+        head->size = 1024 - padded_block_size;
         head->in_use = 0;
     }
 
     // traverse linked list
-    struct block *node = head;
-
-    while (node != NULL)
+    // find "first fit":
+    // a current that's not "in use" && is big enough to hold padded size
+    // then...
+    // mark current as "in use" &&
+    // return pointer to user data after linked list current (+ padding)
+    while (b != NULL)
     {
-        node = node->next;
+        b = b->next;
 
-        if (node->in_use || node->size < size)
+        if (b->next == NULL)
             continue;
 
-        // find "first fit":
-        // a node that's not "in use" && big enough to hold padded size
-        // then
-        // mark "in use" &&
-        // return pointer to user data after linked list node (+ padding)
-        node->in_use = 1;
-        return node + sizeof node;
+        if (b->in_use || b->size < size)
+            continue;
+
+        b->in_use = 1;
+        return PTR_OFFSET(b, padded_block_size);
     }
 
+    // no room
     return NULL;
 }
 
@@ -76,8 +83,8 @@ void print_data(void)
     while (b != NULL)
     {
         // Uncomment the following line if you want to see the pointer values
-        printf("[%p:%d,%s]", b, b->size, b->in_use ? "used" : "free");
-        // printf("[%d,%s]", b->size, b->in_use ? "used" : "free");
+        // printf("[%p:%d,%s]", b, b->size, b->in_use ? "used" : "free");
+        printf("[%d,%s]", b->size, b->in_use ? "used" : "free");
         if (b->next != NULL)
         {
             printf(" -> ");
@@ -91,9 +98,12 @@ void print_data(void)
 
 int main(int argc, char const *argv[])
 {
+    void *p;
 
-    // allocate space for 5 ints
-    int *p = myalloc(sizeof(int) * 5);
+    print_data();
+    p = myalloc(16);
+    print_data();
+    p = myalloc(16);
     printf("%p\n", p);
 
     return 0;
