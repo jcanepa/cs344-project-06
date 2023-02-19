@@ -1,5 +1,6 @@
-#include <stdlib.h>
 #include <sys/mman.h>
+#include <stdbool.h>
+#include <stdlib.h>
 #include <stdio.h>
 
 #define ALIGNMENT 16 // Must be power of 2

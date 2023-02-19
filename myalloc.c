@@ -24,14 +24,17 @@ void *myalloc(int size)
 
     while (b != NULL) // traverse linked list
     {
-        // "first fit" is a node that's not in use & is big enough to hold the padded size
-        if (b->in_use == 0 && (b->size >= PADDED_SIZE(size)))
+        // seeking the "first fit"
+        bool is_free = (b->in_use == 0);
+        bool has_enough_room = (b->size >= PADDED_SIZE(size));
+
+        if (is_free && has_enough_room)
         {
             // found!
             b->in_use = 1;           // mark as "in use"
             return PTR_OFFSET(b, 0); // return pointer to data following node + padding
         }
-        b = b->next;
+        b = b->next; // keep looking...
     }
     return NULL; // insufficient memory space
 }
