@@ -20,12 +20,12 @@ void *myalloc(int size)
         head->in_use = 0;
     }
 
-    // traverse linked list
     struct block *b = head;
-    while (b != NULL)
+
+    while (b != NULL) // traverse linked list
     {
-        // "first fit" is a node that's not "in use" && is big enough to hold padded size
-        if (!b->in_use && b->size >= PADDED_SIZE(size))
+        // "first fit" is a node that's not in use & is big enough to hold the padded size
+        if (!b->in_use && (b->size >= PADDED_SIZE(size)))
         {
             // found!
             b->in_use = 1;           // mark as "in use"
