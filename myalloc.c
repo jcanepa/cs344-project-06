@@ -1,61 +1,37 @@
-#include <stdlib.h>   // NULL
-#include <sys/mman.h> // mmap()
-#include <stdbool.h>  // bool
-#include <stdio.h>    // printf
-
-#define ALIGNMENT 16 // Must be power of 2
-#define GET_PAD(x) ((ALIGNMENT - 1) - (((x)-1) & (ALIGNMENT - 1)))
-#define PADDED_SIZE(x) ((x) + GET_PAD(x))
-#define PTR_OFFSET(p, offset) ((void *)((char *)(p) + (offset)))
-
-struct block
-{
-    struct block *next;
-    int size;   // bytes
-    int in_use; // boolean
-};
+#include "myalloc.h"
 
 struct block *head = NULL;
-padded_block_size = PADDED_SIZE(sizeof(struct block));
 
 /**
  *  Allocate a given number of bytes & return a pointer to it.
  */
 void *myalloc(int size)
 {
-    struct block *b = head;
+    int padded_block_size = PADDED_SIZE(sizeof(struct block));
 
-    // initial call
-    if (b == NULL)
+    // init memory space
+    if (head == NULL)
     {
-        // mmap space
+        // mmap space, building a linked list node inside new space
         head = mmap(
             NULL, 1024, PROT_READ | PROT_WRITE, MAP_ANON | MAP_PRIVATE, -1, 0);
-
-        // build a linked list node inside new space
         head->next = NULL;
         head->size = 1024 - padded_block_size;
         head->in_use = 0;
     }
 
     // traverse linked list
-    // find "first fit":
-    // a current that's not "in use" && is big enough to hold padded size
-    // then...
-    // mark current as "in use" &&
-    // return pointer to user data after linked list current (+ padding)
+    struct block *b = head;
     while (b != NULL)
     {
+        // "first fit" is a node that's not "in use" && is big enough to hold padded size
+        if (!b->in_use && b->size >= PADDED_SIZE(size))
+        {
+            // found!
+            b->in_use = 1;           // mark as "in use"
+            return PTR_OFFSET(b, 0); // return pointer to data following node + padding
+        }
         b = b->next;
-
-        if (b->next == NULL)
-            continue;
-
-        if (b->in_use || b->size < size)
-            continue;
-
-        b->in_use = 1;
-        return PTR_OFFSET(b, padded_block_size);
     }
 
     // no room
