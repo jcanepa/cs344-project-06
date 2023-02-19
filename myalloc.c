@@ -33,9 +33,7 @@ void *myalloc(int size)
         }
         b = b->next;
     }
-
-    // no room
-    return NULL;
+    return NULL; // insufficient memory space
 }
 
 /**
@@ -46,6 +44,9 @@ void myfree(void *p)
     return;
 }
 
+/**
+ * Print allocated memory address space.
+ */
 void print_data(void)
 {
     struct block *b = head;
@@ -72,7 +73,10 @@ void print_data(void)
     printf("\n");
 }
 
-int main(int argc, char const *argv[])
+/**
+ * Program entrypoint.
+ */
+int main(void)
 {
     void *p;
 
