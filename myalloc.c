@@ -25,7 +25,7 @@ void *myalloc(int size)
     while (b != NULL) // traverse linked list
     {
         // "first fit" is a node that's not in use & is big enough to hold the padded size
-        if (!b->in_use && (b->size >= PADDED_SIZE(size)))
+        if (b->in_use == 0 && (b->size >= PADDED_SIZE(size)))
         {
             // found!
             b->in_use = 1;           // mark as "in use"
